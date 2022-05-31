@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Net;
 using System.Text.RegularExpressions;
 
 namespace FreshOnion;
@@ -9,6 +10,9 @@ public static class TordnselParser
         new Regex(
             @"^(?<kind>(?:ExitNode)|(?:Published)|(?:LastStatus)|(?:ExitAddress)|(?:@type)|(?:Downloaded))\s+(?<value>.*?)\s*$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+
+    private static readonly Regex ExitAddressIpRegex = new Regex(@"^\s*(?<ip>[\w.:]+?)(?:\s+.*)?$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     public static bool TryParse(string input, out List<ExitNodeInfo> result)
     {
@@ -61,7 +65,10 @@ public static class TordnselParser
                     node = node with { LastStatus = lastStatus.LocalDateTime };
                     break;
                 case "ExitAddress":
-                    node = node with { ExitAddress = value.ToString() };
+                    var m = ExitAddressIpRegex.Match(value.ToString());
+                    if (!m.Success) return false;
+                    if (!IPAddress.TryParse(m.Groups["ip"].ValueSpan, out var ipAddress)) return false;
+                    node = node with { ExitAddress = ipAddress };
                     break;
                 default:
                     return false;

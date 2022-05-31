@@ -30,6 +30,11 @@ class Program
 
         var nodes = await serviceProvider.GetService<IExitListService>()!.GetExitNodeInfos(
             new Uri(urls.MaxBy(tuple => tuple.date).url), cts.Token);
+        nodes.Sort((left, right) => right.Published.CompareTo(left.Published));
+        foreach (var nodeInfo in nodes.Take(5))
+        {
+            logger.LogInformation("node {Node}", nodeInfo);
+        }
         logger.LogInformation("Gathered {Count} nodes", nodes.Count);
     }
 }
