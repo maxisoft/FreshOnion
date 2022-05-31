@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreshOnion", "FreshOnion\FreshOnion.csproj", "{DD99053F-958A-4A8F-92DC-483AFF865208}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreshOnion.Tests", "FreshOnion.Tests\FreshOnion.Tests.csproj", "{DF1DD1DE-E507-4BCC-9631-CE44BDF00C71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{DD99053F-958A-4A8F-92DC-483AFF865208}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD99053F-958A-4A8F-92DC-483AFF865208}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD99053F-958A-4A8F-92DC-483AFF865208}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF1DD1DE-E507-4BCC-9631-CE44BDF00C71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF1DD1DE-E507-4BCC-9631-CE44BDF00C71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF1DD1DE-E507-4BCC-9631-CE44BDF00C71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF1DD1DE-E507-4BCC-9631-CE44BDF00C71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
