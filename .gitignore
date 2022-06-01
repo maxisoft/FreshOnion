@@ -577,3 +577,4 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/rider,dotnetcore,windows,linux,macos,visualstudio,visualstudiocode
+/naiveproxy-v102.0.5005.61-1-win-x64

@@ -216,7 +216,7 @@ class Program
     private static IConfigurationRoot BuidConfiguration()
     {
         var configurationRoot = new ConfigurationBuilder()
-            .AddEnvironmentVariables("FRESHONION")
+            .AddEnvironmentVariables("FRESHONION_")
             .AddJsonFile("appsettings.json", true)
             .Build();
         return configurationRoot;
