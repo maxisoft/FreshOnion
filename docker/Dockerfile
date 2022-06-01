@@ -13,7 +13,7 @@ RUN \
     addgroup --system --gid $gid $groupname && \
     adduser --system --uid $uid --ingroup $groupname --shell /bin/sh $username && \
     mkdir -p "$APP_PATH" && \
-    chown -R $uid:$gid "$APP_PATH"
+    chown -R $uid:$gid "$APP_PATH" && \
 VOLUME [ "/freshonion" ]
 WORKDIR "/freshonion"
 COPY publish/$TARGETPLATFORM ${APP_PATH}
