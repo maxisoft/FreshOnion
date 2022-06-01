@@ -73,7 +73,7 @@ public class TorExitNodeChecker : ITorExitNodeChecker
 
     public async Task<HashSet<string>> SelectBestNodes(CancellationToken cancellationToken)
     {
-        var maxTasks = _freshOnionSection.GetValue<int>("NumCheckTask", 256);
+        var maxTasks = _freshOnionSection.GetValue<int>("NumCheckTask", 16);
 
         using var semaphore = new SemaphoreSlim(maxTasks, maxTasks);
 
