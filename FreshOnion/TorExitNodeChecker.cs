@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using FreshOnion.Tor;
 using FreshOnion.Tor.Http;
 using Microsoft.Extensions.Configuration;
@@ -49,12 +50,21 @@ public class TorExitNodeChecker : ITorExitNodeChecker
             try
             {
                 token.ThrowIfCancellationRequested();
-                var r = await pingSender.SendPingAsync(node.ExitAddress, pingTimeout, buff, new PingOptions(ttl, true))
-                    .ConfigureAwait(false);
-                if (!((ReadOnlySpan<byte>)r.Buffer).SequenceEqual(buff))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    return -1;
+                    var r = await pingSender.SendPingAsync(node.ExitAddress, pingTimeout, buff, new PingOptions(ttl, true))
+                        .ConfigureAwait(false);
+                    if (!((ReadOnlySpan<byte>)r.Buffer).SequenceEqual(buff))
+                    {
+                        return -1;
+                    }
                 }
+                else
+                {
+                    await pingSender.SendPingAsync(node.ExitAddress, pingTimeout)
+                        .ConfigureAwait(false);
+                }
+                
             }
             catch (PingException)
             {
@@ -73,7 +83,13 @@ public class TorExitNodeChecker : ITorExitNodeChecker
 
     public async Task<HashSet<string>> SelectBestNodes(CancellationToken cancellationToken)
     {
-        var maxTasks = _freshOnionSection.GetValue<int>("NumCheckTask", 16);
+        var maxTasks = 256;
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            maxTasks = 64;
+        }
+
+        maxTasks = _freshOnionSection.GetValue<int>("NumCheckTask", maxTasks);
 
         using var semaphore = new SemaphoreSlim(maxTasks, maxTasks);
 
@@ -89,11 +105,12 @@ public class TorExitNodeChecker : ITorExitNodeChecker
         var result = new ConcurrentBag<(ExitNodeInfo node, long latency)>();
         try
         {
-            await Parallel.ForEachAsync(nodes, cancellationToken, async (node, token) =>
+            await Parallel.ForEachAsync(nodes.Take(maxTasks), cancellationToken, async (node, token) =>
             {
-                await semaphore.WaitAsync(token).ConfigureAwait(false);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
+                    if (token.IsCancellationRequested) return;
                     var latency = await CheckNode(node, token).ConfigureAwait(false);
                     if (latency > 0)
                     {
