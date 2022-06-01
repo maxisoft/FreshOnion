@@ -21,21 +21,6 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '6.0.x'
-
-    - 
-      name: Build Dockerfile
-      timeout-minutes: 20
-      run: |
-            docker build -t freshonion:testing -f ./Docker/Dockerfile .
-    - 
-      name: Install and Run Dive
-      timeout-minutes: 2
-      run: |
-            pushd /tmp
-            wget --no-verbose https://github.com/wagoodman/dive/releases/download/v0.10.0/dive_0.10.0_linux_amd64.deb
-            sudo apt install --quiet -y ./dive_0.10.0_linux_amd64.deb
-            popd
-            CI=true dive --ci-config "${{ github.workspace }}/.dive-ci" freshonion:testing
   
     # cross publish locally to reduce time taken
     - run: dotnet publish -c Release -o publish/linux/amd64 --runtime linux-musl-x64 --self-contained false
