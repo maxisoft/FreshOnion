@@ -83,11 +83,11 @@ class Program
         while (!(torInstance.Process?.HasExited ?? true))
         {
             using var tickCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
-            tickCancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(6));
+            tickCancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(15));
             var validNodes = await serviceProvider.GetService<ITorExitNodeChecker>()!
                 .SelectBestNodes(tickCancellationTokenSource.Token)
                 .ConfigureAwait(false);
-            logger.LogInformation("Found {Count} nodes", validNodes.Count);
+            logger.LogInformation("Found {Count} valid nodes", validNodes.Count);
             if (validNodes.Any())
             {
                 await torInstance.ChangeExitNodes(validNodes, tickCancellationTokenSource.Token).ConfigureAwait(false);
