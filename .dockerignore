@@ -23,4 +23,8 @@
 **/values.dev.yaml
 LICENSE
 README.md
+<<<<<<< HEAD
 #**/appsettings.json
+=======
+**/appsettings.json
+>>>>>>> c0cf985 (Support for docker)
