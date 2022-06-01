@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 PUID=${PUID:-913}
-usermod -u "$PUID" "tor" >/dev/null
+usermod -u "$PUID" "freshonion" >/dev/null
 PGID=${PGID:-913}
-groupmod -g "$PGID" "tor" >/dev/null
+groupmod -g "$PGID" "freshonion" >/dev/null
 APP_PATH=${APP_PATH:-/app}
 
 BASEPATH=/freshonion

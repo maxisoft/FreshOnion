@@ -7,8 +7,8 @@ ARG maintainer="maxisoft"
 ARG uid=914 # the User id used to run program / create new output files
 ARG gid=914
 ARG APP_PATH=/app
-ARG username=tor
-ARG groupname=tor
+ARG username=freshonion
+ARG groupname=freshonion
 LABEL maintainer="${maintainer}" name="FreshOnion" url="https://github.com/${maintainer}/FreshOnion" vcs-url="https://github.com/${maintainer}/FreshOnion" org.opencontainers.image.source="https://github.com/${maintainer}/FreshOnion"
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_RUNNING_IN_CONTAINER=true PUID=$uid PGID=$gid IS_DOCKER=1 NICE_ADJUSTEMENT=5 IONICE_CLASS=3 IONICE_CLASSDATA=7 APP_PATH=${APP_PATH} FRESHONION_TOR__PATH=//usr/bin/tor
 RUN \
