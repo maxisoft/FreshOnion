@@ -21,4 +21,5 @@ VOLUME [ "/freshonion" ]
 WORKDIR "/freshonion"
 COPY publish/$TARGETPLATFORM ${APP_PATH}
 ADD --chown=$uid:$gid ./Docker/start_freshonion.sh ${APP_PATH}/start_freshonion.sh
+EXPOSE 9050 9051 9052
 ENTRYPOINT [ "/bin/ash", "${APP_PATH}/start_freshonion.sh" ]
