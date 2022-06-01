@@ -1,8 +1,9 @@
 ﻿using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
+using FreshOnion.Tor.Http;
 
-namespace FreshOnion;
+namespace FreshOnion.Tor.Http;
 
 public static class TordnselParser
 {

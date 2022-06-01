@@ -2,26 +2,20 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
-namespace FreshOnion;
-
-public interface IExitListService
-{
-    public ValueTask<List<(string url, DateTimeOffset date)>> GetExitListsUrls(CancellationToken cancellationToken);
-    public ValueTask<List<ExitNodeInfo>> GetExitNodeInfos(Uri uri, CancellationToken cancellationToken);
-}
+namespace FreshOnion.Tor.Http;
 
 public class ExitListService: IExitListService
 {
     private readonly ILogger<ExitListService> _logger;
     private readonly HttpClient _httpClient;
 
-    private static readonly Regex urlRegex =
+    private static readonly Regex UrlRegex =
         new Regex(@"https?://(?:.*?)/recent/exit-lists/(?<date>\d+-\d+-\d+-\d+-\d+-\d+)",
             RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
-    public ExitListService(ILoggerFactory loggerFactory, HttpClient httpClient)
+    public ExitListService(ILogger<ExitListService> logger, HttpClient httpClient)
     {
-        _logger = loggerFactory.CreateLogger<ExitListService>();
+        _logger = logger;
         _httpClient = httpClient;
     }
 
@@ -30,7 +24,7 @@ public class ExitListService: IExitListService
         using var r = await _httpClient.GetAsync("https://metrics.torproject.org/collector/recent/exit-lists/", cancellationToken);
         var content = await r.Content.ReadAsStringAsync(cancellationToken);
         var res = new List<(string url, DateTimeOffset date)>();
-        foreach (Match match in urlRegex.Matches(content))
+        foreach (Match match in UrlRegex.Matches(content))
         {
             if (!match.Success) continue;
             var dateGroup = match.Groups["date"];

@@ -1,10 +1,10 @@
-﻿# Default ignored files
+# Default ignored files
 /shelf/
 /workspace.xml
 # Rider ignored files
 /contentModel.xml
 /projectSettingsUpdater.xml
-/.idea.freshonion.iml
+/.idea.FreshOnion.iml
 /modules.xml
 # Editor-based HTTP Client requests
 /httpRequests/

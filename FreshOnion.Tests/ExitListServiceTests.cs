@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FreshOnion.IoC;
+using FreshOnion.Tor.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -17,7 +18,7 @@ public class ExitListServiceTests
     public ExitListServiceTests()
     {
         _serviceProvider = new ServiceCollection()
-            .AddLogging(builder => { builder.AddSystemdConsole(); })
+            .AddLogging(builder => { builder.AddJsonConsole(); })
             .AddHttpClient<IExitListService, ExitListService>()
             .Services
             .AddOptions()
@@ -49,7 +50,7 @@ public class ExitListServiceTests
         using var cts = new CancellationTokenSource(30_000);
         var urls = await service!.GetExitListsUrls(cts.Token);
 
-        var nodes = await service.GetExitNodeInfos(new Uri(urls[^1].url), cts.Token);
+        var nodes = await service.GetExitNodeInfos(new Uri(urls[0].url), cts.Token);
         Assert.NotEmpty(nodes);
     }
 }
