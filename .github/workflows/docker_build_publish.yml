@@ -26,7 +26,7 @@ jobs:
       name: Build Dockerfile
       timeout-minutes: 20
       run: |
-            docker build -t FreshOnion:testing -f ./Docker/Dockerfile .
+            docker build -t freshonion:testing -f ./Docker/Dockerfile .
     - 
       name: Install and Run Dive
       timeout-minutes: 2
@@ -35,7 +35,7 @@ jobs:
             wget --no-verbose https://github.com/wagoodman/dive/releases/download/v0.10.0/dive_0.10.0_linux_amd64.deb
             sudo apt install --quiet -y ./dive_0.10.0_linux_amd64.deb
             popd
-            CI=true dive --ci-config "${{ github.workspace }}/.dive-ci" FreshOnion:testing
+            CI=true dive --ci-config "${{ github.workspace }}/.dive-ci" freshonion:testing
   
     # cross publish locally to reduce time taken
     - run: dotnet publish -c Release -o publish/linux/amd64 --runtime linux-musl-x64 --self-contained false
@@ -61,7 +61,7 @@ jobs:
             --output "type=image,push=true" \
             --build-arg maintainer=${{ github.repository_owner }} \
             --file ./Docker/Dockerfile . \
-            --tag ghcr.io/${{ github.repository_owner }}/FreshOnion/FreshOnion-testing:latest
+            --tag ghcr.io/${{ github.repository_owner }}/freshonion/freshonion-testing:latest
 
     - name: Build dockerfile
       if: success() && github.ref == 'refs/heads/main'
@@ -74,4 +74,4 @@ jobs:
             --output "type=image,push=true" \
             --build-arg maintainer=${{ github.repository_owner }} \
             --file ./Docker/Dockerfile . \
-            --tag ghcr.io/${{ github.repository_owner }}/FreshOnion/FreshOnion:latest
+            --tag ghcr.io/${{ github.repository_owner }}/freshonion/freshonion:latest
