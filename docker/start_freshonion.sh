@@ -23,4 +23,4 @@ cp --no-clobber "$APP_PATH/torrc.template" torrc.template
 cp --no-clobber "$APP_PATH/appsettings.json" appsettings.json
 
 renice "+${NICE_ADJUSTEMENT:-1}" $$ >/dev/null 2>&1 || :
-exec ionice -c "${IONICE_CLASS:-3}" -n "${IONICE_CLASSDATA:-7}" -t su-exec "$PUID:$PGID" "dotnet" "${APP_PATH}/FreshOnion.dll" $@
+exec ionice -c "${IONICE_CLASS:-3}" -n "${IONICE_CLASSDATA:-7}" -t su-exec "$PUID:$PGID" "${APP_PATH}/FreshOnion" $@

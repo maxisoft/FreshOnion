@@ -1,7 +1,4 @@
-FROM mcr.microsoft.com/dotnet/runtime:6.0-alpine AS base
-WORKDIR /app
-
-FROM base AS final
+FROM alpine:edge AS final
 ARG TARGETPLATFORM
 ARG maintainer="maxisoft"
 ARG uid=914 # the User id used to run program / create new output files

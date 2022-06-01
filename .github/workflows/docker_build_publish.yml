@@ -23,9 +23,9 @@ jobs:
         dotnet-version: '6.0.x'
   
     # cross publish locally to reduce time taken
-    - run: dotnet publish -c Release -o publish/linux/amd64 --runtime linux-musl-x64 --self-contained false
-    - run: dotnet publish -c Release -o publish/linux/arm/v7 --runtime linux-musl-arm --self-contained false
-    - run: dotnet publish -c Release -o publish/linux/arm64/v8 --runtime linux-musl-arm64 --self-contained false
+    - run: dotnet publish "FreshOnion" -c Release -o publish/linux/amd64 --runtime linux-musl-x64 --self-contained true -p:PublishTrimmed=True
+    - run: dotnet publish "FreshOnion" -c Release -o publish/linux/arm/v7 --runtime linux-musl-arm --self-contained true -p:PublishTrimmed=True
+    - run: dotnet publish "FreshOnion" -c Release -o publish/linux/arm64/v8 --runtime linux-musl-arm64 --self-contained true -p:PublishTrimmed=True
 
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
