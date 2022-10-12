@@ -20,7 +20,7 @@ if [ ! "$(stat -c %u "${BASEPATH}")" = "$PUID" ]; then
 fi
 
 cp --no-clobber "$APP_PATH/torrc.template" torrc.template
-cp --no-clobber "$APP_PATH/appsettings.json" appsettings.json
+cp --no-clobber "$APP_PATH/appsettings.json" appsettings.json || :
 rm -rf /tmp/*
 
 renice "+${NICE_ADJUSTEMENT:-1}" $$ >/dev/null 2>&1 || :
