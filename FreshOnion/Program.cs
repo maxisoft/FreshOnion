@@ -246,8 +246,11 @@ class Program
         const string defaultAppSettingsName = "appsettings.json";
         var appsettingsPath = defaultAppSettingsName;
         appsettingsPath = fs.GetFile(appsettingsPath);
-        appsettingsPath = Path.GetRelativePath(basePath,
-            appsettingsPath != defaultAppSettingsName ? Path.GetFullPath(appsettingsPath) : appsettingsPath);
+        if (appsettingsPath != defaultAppSettingsName)
+        {
+            appsettingsPath = Path.GetRelativePath(basePath, Path.GetFullPath(appsettingsPath));
+        }
+        
 
         var configurationRoot = new ConfigurationBuilder()
             .SetBasePath(basePath)
