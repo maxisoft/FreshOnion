@@ -123,8 +123,9 @@ public class TorService : ITorService
         Directory.CreateDirectory(wd);
         var config = InitTorConfiguration(wd);
         var generatedConfig =
-            await _torConfigurationFileGenerator.Generate(config, cancellationToken).ConfigureAwait(false);
+            await _torConfigurationFileGenerator.Generate(config, wd, cancellationToken).ConfigureAwait(false);
         await File.WriteAllTextAsync(config.TorrcFile!, generatedConfig, cancellationToken).ConfigureAwait(false);
+        _logger.LogDebug("{Config}", generatedConfig);
         return config;
     }
 

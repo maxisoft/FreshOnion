@@ -16,7 +16,6 @@ NoExec 1
 {{#PidFile}}
 PidFile {{PidFile}}
 {{/PidFile}}
-#Sandbox 1
 ClientOnly 1
 {{#EnforceDistinctSubnets}}
 EnforceDistinctSubnets {{EnforceDistinctSubnets}}

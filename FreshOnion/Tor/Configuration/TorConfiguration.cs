@@ -7,12 +7,12 @@ public class TorConfiguration
     public int SocksPort { get; set; } = DefaultSocksPort;
     public List<string> ExitNodes { get; set; } = new();
 
-    
-    public string? CacheDirectory { get; set; }
+
+    public string? CacheDirectory { get; set; } = "cache";
     public int? ControlPort { get; set; }
-    public string? ControlPortWriteToFile { get; set; }
-    public string? CookieAuthFile { get; set; }
-    public string? DataDirectory { get; set; }
+    public string? ControlPortWriteToFile { get; set; } = "cp.port";
+    public string? CookieAuthFile { get; set; } = "cookie-auth";
+    public string? DataDirectory { get; set; } = "data";
     public string? PidFile { get; set; }
     
     public string? TorrcFile { get; set; }
