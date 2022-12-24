@@ -7,7 +7,7 @@ namespace FreshOnion;
 /// <summary>
 /// Generate torrc file using mustache pattern
 /// </summary>
-public class TorConfigurationFileGenerator : ITorConfigurationFileGenerator
+public partial class TorConfigurationFileGenerator : ITorConfigurationFileGenerator
 {
     private readonly IFileSearch _fileSearch;
 
@@ -27,8 +27,6 @@ public class TorConfigurationFileGenerator : ITorConfigurationFileGenerator
         return s == absolute ? absolute : Path.Combine(directory, s);
     }
 
-    private static readonly Regex _lineEnding = new Regex(@"(?:\r\n)|\r", RegexOptions.Singleline | RegexOptions.Compiled);
-    
     public async ValueTask<string> Generate(TorConfiguration configuration, string workingDirectory, CancellationToken cancellationToken)
     {
         var file = _fileSearch.GetFile("torrc.template");
@@ -55,6 +53,9 @@ public class TorConfigurationFileGenerator : ITorConfigurationFileGenerator
             HardwareAccel = 1
         }).ConfigureAwait(false);
 
-        return _lineEnding.Replace(res, "\n");
+        return LineEndingRegex().Replace(res, "\n");
     }
+
+    [GeneratedRegex("(?:\\r\\n)|\\r", RegexOptions.Compiled | RegexOptions.Singleline)]
+    private static partial Regex LineEndingRegex();
 }
