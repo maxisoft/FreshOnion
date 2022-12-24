@@ -235,10 +235,24 @@ class Program
 
     private static IConfigurationRoot BuildConfiguration()
     {
+        var basePath = Environment.GetEnvironmentVariable("BASEPATH") ?? "";
+        if (string.IsNullOrWhiteSpace(basePath))
+        {
+            basePath = Environment.CurrentDirectory;
+        }
+
+        using var emptyConfig = new ConfigurationManager();
+        var fs = new FileSearch(emptyConfig);
+        const string defaultAppSettingsName = "appsettings.json";
+        var appsettingsPath = defaultAppSettingsName;
+        appsettingsPath = fs.GetFile(appsettingsPath);
+        appsettingsPath = Path.GetRelativePath(basePath,
+            appsettingsPath != defaultAppSettingsName ? Path.GetFullPath(appsettingsPath) : appsettingsPath);
+
         var configurationRoot = new ConfigurationBuilder()
-            .SetBasePath(Environment.CurrentDirectory)
+            .SetBasePath(basePath)
             .AddEnvironmentVariables("FRESHONION_")
-            .AddJsonFile("appsettings.json", true)
+            .AddJsonFile(appsettingsPath, true)
             .Build();
         return configurationRoot;
     }

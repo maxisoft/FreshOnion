@@ -19,21 +19,31 @@ public class FileSearch : IFileSearch
 
     private static IEnumerable<string> AdditionDirectories()
     {
-        yield return Directory.GetCurrentDirectory();
+        var basePath = Environment.GetEnvironmentVariable("BASEPATH");
+        if (!string.IsNullOrWhiteSpace(basePath))
+        {
+            yield return basePath;
+        }
+
+        var path = Directory.GetCurrentDirectory();
+        if (path != basePath)
+        {
+            yield return path;
+        }
+
         var assemblyDirectory = Directory.GetParent(Assembly.GetCallingAssembly().Location)?.FullName ?? string.Empty;
-        if (!string.IsNullOrEmpty(assemblyDirectory))
+        if (!string.IsNullOrEmpty(assemblyDirectory) && assemblyDirectory != basePath)
         {
             yield return assemblyDirectory;
         }
-        
     }
-    
+
     private static readonly List<string> EmptyList = new List<string>();
 
     public string GetFile(string name)
     {
         var paths = _configuration.GetValue<List<string>>("SearchPath", EmptyList);
-        
+
         foreach (var path in paths.Concat(AdditionDirectories()))
         {
             if (string.IsNullOrWhiteSpace(path)) continue;
