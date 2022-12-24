@@ -25,16 +25,28 @@ class Program
         var serviceProvider = BuildServiceProvider(configurationRoot);
         var logger = serviceProvider.GetService<ILoggerFactory>()!.CreateLogger<Program>();
         using var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
 
-        using var torInstance = serviceProvider.GetService<ITorServiceSingleton>()!;
+        void CancelMainToken()
+        {
+            try
+            {
+                // ReSharper disable once AccessToDisposedClosure
+                cts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                Debug.WriteLine("Trying to cancel disposed CancellationTokenSource");
+            }
+        }
+
+        Console.CancelKeyPress += (_, _) => CancelMainToken();
+
+        using var torInstance = serviceProvider.GetRequiredService<ITorServiceSingleton>();
+        // ReSharper disable once AccessToDisposedClosure
+        await using var cancellationTokenRegistration = cancellationToken.Register(() => torInstance.Dispose());
         logger.LogDebug("Starting tor main instance ...");
         await torInstance.Start(cts.Token);
-        torInstance.Process!.Exited += (sender, eventArgs) =>
-            Policy
-                .Handle<ObjectDisposedException>()
-                .Fallback(() => { logger.LogCritical("closing error"); })
-                .Execute(() => cts.Cancel()
-                );
         logger.LogInformation("Started tor main instance on {Address}", torInstance.WebProxy.Address);
 
         {
@@ -47,11 +59,12 @@ class Program
             {
                 try
                 {
-                    await serviceProvider.GetService<IExitListService>()!.GetExitListsUrls(waitFirstConnection.Token)
+                    await serviceProvider.GetRequiredService<IExitListService>()
+                        .GetExitListsUrls(waitFirstConnection.Token)
                         .ConfigureAwait(false);
                     break;
                 }
-                catch (Exception e) when (e is TaskCanceledException or OperationCanceledException or TimeoutException)
+                catch (TaskCanceledException e)
                 {
                     logger.LogTrace(e, "tor still not started ...");
                     if (waitFirstConnection.IsCancellationRequested)
@@ -66,114 +79,120 @@ class Program
             waitFirstConnection.Token.ThrowIfCancellationRequested();
         }
 
-        var urls = await serviceProvider.GetService<IExitListService>()!.GetExitListsUrls(cts.Token);
-        logger.LogInformation("Gathered {Count} urls", urls.Count);
-
-        var nodes = await serviceProvider.GetService<IExitListService>()!.GetExitNodeInfos(
-            new Uri(urls.MaxBy(tuple => tuple.date).url), cts.Token);
-        nodes.Sort((left, right) => right.Published.CompareTo(left.Published));
-        foreach (var nodeInfo in nodes.Take(5))
-        {
-            logger.LogInformation("node {Node}", nodeInfo);
-        }
-
-        logger.LogInformation("Gathered {Count} nodes", nodes.Count);
-
-
+        var runId = 0;
         while (!(torInstance.Process?.HasExited ?? true))
         {
             using var tickCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
-            tickCancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(15));
-            var validNodes = await serviceProvider.GetService<ITorExitNodeChecker>()!
-                .SelectBestNodes(tickCancellationTokenSource.Token)
-                .ConfigureAwait(false);
-            logger.LogInformation("Found {Count} valid nodes", validNodes.Count);
-            if (validNodes.Any())
-            {
-                await torInstance.ChangeExitNodes(validNodes, tickCancellationTokenSource.Token).ConfigureAwait(false);
-            }
+            tickCancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(runId <= 0 ? 2 : 15));
 
-            if (torInstance.Process is not { HasExited: false }) continue;
+            List<(string url, DateTimeOffset date)> urls;
+            List<ExitNodeInfo> nodes;
             try
             {
-                await torInstance.Process.WaitForExitAsync(tickCancellationTokenSource.Token).ConfigureAwait(false);
+                urls = await serviceProvider.GetRequiredService<IExitListService>()
+                    .GetExitListsUrls(tickCancellationTokenSource.Token);
+                logger.LogInformation("Gathered {Count} urls", urls.Count);
+
+                nodes = await serviceProvider.GetRequiredService<IExitListService>().GetExitNodeInfos(
+                    new Uri(urls.MaxBy(tuple => tuple.date).url), tickCancellationTokenSource.Token);
+                nodes.Sort(static (left, right) => right.Published.CompareTo(left.Published));
             }
-            catch (Exception e) when (e is TaskCanceledException or OperationCanceledException or TimeoutException)
+            catch (Exception e) when (e is OperationCanceledException or HttpRequestException)
             {
+                logger.LogError(e, "Unable to retrieve exit nodes, restarting tor");
+                await torInstance.Restart(cts.Token);
+                continue;
+            }
+
+
+            if (runId <= 0)
+            {
+                foreach (var nodeInfo in nodes.Take(5))
+                {
+                    logger.LogInformation("node {Node}", nodeInfo);
+                }
+
+                logger.LogInformation("Gathered {Count} nodes", nodes.Count);
+            }
+
+
+            List<string> validNodes;
+            using (var bestNodeCancellationTokenSource =
+                   CancellationTokenSource.CreateLinkedTokenSource(tickCancellationTokenSource.Token))
+            {
+                bestNodeCancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(runId <= 0 ? 1 : 15));
+
+                validNodes = await serviceProvider.GetService<ITorExitNodeChecker>()!
+                    .SelectBestNodes(bestNodeCancellationTokenSource.Token)
+                    .ConfigureAwait(false);
+            }
+
+
+            logger.LogInformation("Found {Count} valid nodes", validNodes.Count);
+            runId++;
+            if (validNodes.Any())
+            {
+                await torInstance.ChangeExitNodes(validNodes.Take(128), tickCancellationTokenSource.Token)
+                    .ConfigureAwait(false);
+            }
+            else
+            {
+                logger.LogError("Unable to find any valid nodes, restarting tor");
+                await torInstance.Restart(tickCancellationTokenSource.Token).ConfigureAwait(false);
+                continue;
+            }
+
+
+            if (torInstance.Process is not { HasExited: false }) continue;
+            var processExitTask = torInstance.Process.WaitForExitAsync(tickCancellationTokenSource.Token);
+            var monitorTask = MonitorTor(serviceProvider, tickCancellationTokenSource.Token);
+            try
+            {
+                await Task.WhenAny(processExitTask, monitorTask).ConfigureAwait(false);
+                if (monitorTask.IsFaulted)
+                {
+                    logger.LogError(monitorTask.Exception, "error while monitoring tor");
+                    await torInstance.Restart(tickCancellationTokenSource.Token).ConfigureAwait(false);
+                    continue;
+                }
+
+                await Task.WhenAll(monitorTask, processExitTask).ConfigureAwait(false);
+                monitorTask.Dispose();
+                processExitTask.Dispose();
+            }
+            catch (Exception e) when (e is OperationCanceledException or TimeoutException)
+            {
+                tickCancellationTokenSource.Cancel();
                 logger.LogTrace("tor still running ...");
             }
         }
 
         await torInstance.Process!.WaitForExitAsync(cts.Token).ConfigureAwait(false);
+        Environment.Exit(cts.IsCancellationRequested ? 1 : torInstance.Process.ExitCode);
+    }
 
-        var tmp = Path.GetTempPath();
-        var runtimeTmp = Path.Combine(tmp, "freshonion", Guid.NewGuid().ToString());
-
-        Directory.CreateDirectory(runtimeTmp);
-        var torrc = Path.Combine(runtimeTmp, "torrc");
-        var torrcConfig = new TorConfiguration()
+    private static async Task MonitorTor(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
         {
-            ExitNodes = nodes.Take(5).Select(info => info.ExitNode), SocksPort = 15578, ControlPort = 15579,
-            CookieAuthFile = "cookie-auth"
-        };
-
-        {
-            var config =
-                await serviceProvider.GetService<ITorConfigurationFileGenerator>()!.Generate(torrcConfig, cts.Token);
-            await File.WriteAllTextAsync(torrc, config, cts.Token);
-        }
-
-        var torExe = "tor";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            torExe += ".exe";
-        }
-
-        var torConfig = serviceProvider.GetService<IConfiguration>()!.GetSection("Tor");
-        torExe = torConfig.GetValue<string>("Path", torExe);
-
-        var pi = new ProcessStartInfo(torExe);
-        pi.Arguments = $"--hush -f {Path.GetFullPath(torrc)}";
-        pi.WorkingDirectory = runtimeTmp;
-        pi.UseShellExecute = torConfig.GetValue<bool>("UseShellExecute", false);
-        using var p = Process.Start(pi)!;
-        try
-        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromMinutes(1));
+            try
             {
-                using var processCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
-                processCts.CancelAfter(torConfig.GetValue<int>("startupDelay", 500));
-                try
+                await serviceProvider.GetRequiredService<IExitListService>().GetExitListsUrls(cts.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    await p.WaitForExitAsync(processCts.Token);
+                    return;
                 }
-                catch (OperationCanceledException)
-                {
-                    if (p.HasExited) throw;
-                }
+
+                throw;
             }
 
-            var cookieAuthFile = torrcConfig.CookieAuthFile ?? "cookie-auth";
-            if (!File.Exists(torrcConfig.CookieAuthFile))
-            {
-                cookieAuthFile = Path.Combine(runtimeTmp, cookieAuthFile);
-            }
-
-            var cookieAuth = await File.ReadAllBytesAsync(cookieAuthFile, cts.Token);
-
-
-            var torClient = new TorControlClient(
-                new ControlClientOptions()
-                    { Port = torrcConfig.ControlPort.Value, Host = "localhost", Password = cookieAuth },
-                serviceProvider.GetService<ILoggerFactory>()!.CreateLogger<TorControlClient>());
-
-            await torClient.ChangeExitNodes(nodes.Take(5).Select(info => info.ExitNode), cts.Token);
-        }
-        finally
-        {
-            if (!p.HasExited)
-            {
-                p.Kill(true);
-            }
+            await Task.Delay(30_000, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -194,13 +213,14 @@ class Program
             .AddTransient<IHttpClientFactoryHelper, HttpClientFactoryHelper>()
             .AddHttpClient<IExitListService, ExitListService>((provider, client) =>
             {
-                var httpClientFactoryHelper = provider.GetService<IHttpClientFactoryHelper>();
-                httpClientFactoryHelper?.Configure(client);
+                var httpClientFactoryHelper = provider.GetRequiredService<IHttpClientFactoryHelper>();
+                httpClientFactoryHelper.Configure(client);
             })
             .ConfigurePrimaryHttpMessageHandler(provider =>
-                provider.GetService<IHttpClientFactoryHelper>()!.GetHandler(provider.GetService<ITorServiceSingleton>()
+                provider.GetRequiredService<IHttpClientFactoryHelper>().GetHandler(provider
+                    .GetService<ITorServiceSingleton>()
                     ?.WebProxy))
-            .AddPolicyHandler((provider, _) => provider.GetService<IHttpClientFactoryHelper>()?.GetRetryPolicy())
+            .AddPolicyHandler((provider, _) => provider.GetRequiredService<IHttpClientFactoryHelper>().GetRetryPolicy())
             .Services
             .AddOptions()
             .AddSingleton<IConfiguration>(configurationRoot)

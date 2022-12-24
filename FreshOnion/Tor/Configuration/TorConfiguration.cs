@@ -2,8 +2,10 @@
 
 public class TorConfiguration
 {
-    public int SocksPort { get; set; } = 9050;
-    public IEnumerable<string> ExitNodes { get; set; } = ArraySegment<string>.Empty;
+    
+    public const int DefaultSocksPort = 9050;
+    public int SocksPort { get; set; } = DefaultSocksPort;
+    public List<string> ExitNodes { get; set; } = new();
 
     
     public string? CacheDirectory { get; set; }
@@ -18,4 +20,6 @@ public class TorConfiguration
     public int? HTTPTunnelPort { get; set; }
     
     public int? EnforceDistinctSubnets { get; set; }
+
+    public int NumExitNodes { get; set; } = 64;
 }

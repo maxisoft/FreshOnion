@@ -2,5 +2,5 @@ namespace FreshOnion;
 
 public interface ITorExitNodeChecker
 {
-    Task<HashSet<string>> SelectBestNodes(CancellationToken cancellationToken);
+    Task<List<string>> SelectBestNodes(CancellationToken cancellationToken);
 }

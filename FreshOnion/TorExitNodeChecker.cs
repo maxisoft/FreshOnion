@@ -81,12 +81,12 @@ public class TorExitNodeChecker : ITorExitNodeChecker
         return sw.ElapsedMilliseconds;
     }
 
-    public async Task<HashSet<string>> SelectBestNodes(CancellationToken cancellationToken)
+    public async Task<List<string>> SelectBestNodes(CancellationToken cancellationToken)
     {
         var maxTasks = 256;
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            maxTasks = 64;
+            maxTasks = 128;
         }
 
         maxTasks = _freshOnionSection.GetValue<int>("NumCheckTask", maxTasks);
@@ -123,7 +123,7 @@ public class TorExitNodeChecker : ITorExitNodeChecker
                 }
             });
         }
-        catch (Exception e) when (e is TaskCanceledException or OperationCanceledException or HttpRequestException)
+        catch (Exception e) when (e is OperationCanceledException or HttpRequestException)
         {
             _logger.LogTrace(e, "");
             if (!cancellationToken.IsCancellationRequested) throw;
@@ -131,7 +131,6 @@ public class TorExitNodeChecker : ITorExitNodeChecker
 
         return result
             .OrderBy(tuple => tuple.latency * Math.Log((DateTimeOffset.UtcNow - tuple.node.Published).Duration().TotalMinutes + 1))
-            .Take(32)
-            .Select(tuple => tuple.node.ExitNode).ToHashSet();
+            .Select(tuple => tuple.node.ExitNode).ToList();
     }
 }

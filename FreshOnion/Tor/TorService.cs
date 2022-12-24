@@ -191,6 +191,7 @@ public class TorService : ITorService
         }
 
         Process?.Dispose();
+        Process = null;
         Guid = Guid.Empty;
     }
 }

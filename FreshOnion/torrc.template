@@ -1,11 +1,9 @@
-﻿SocksPort {{SocksPort}} NoIsolateClientAddr NoIsolateSOCKSAuth
+﻿SocksPort {{SocksPort}}
 {{#HTTPTunnelPort}}
 HTTPTunnelPort {{HTTPTunnelPort}}
 {{/HTTPTunnelPort}}
 AvoidDiskWrites 1
 CacheDirectory {{CacheDirectory}}{{^CacheDirectory}}cache{{/CacheDirectory}}
-ConstrainedSockets 1
-ConstrainedSockSize 8192 
 ControlPort {{ControlPort}}{{^ControlPort}}auto{{/ControlPort}}
 ControlPortWriteToFile {{ControlPortWriteToFile}}{{^ControlPortWriteToFile}}cp.port{{/ControlPortWriteToFile}}
 {{#CookieAuthFile}}
@@ -13,7 +11,9 @@ CookieAuthentication 1
 CookieAuthFile {{CookieAuthFile}}{{^CookieAuthFile}}cookie-auth{{/CookieAuthFile}}
 {{/CookieAuthFile}}
 DataDirectory {{DataDirectory}}{{^DataDirectory}}data{{/DataDirectory}}
-HardwareAccel 1
+{{#HardwareAccel}}
+HardwareAccel {{HardwareAccel}}
+{{/HardwareAccel}}
 NoExec 1
 {{#PidFile}}
 PidFile {{PidFile}}
@@ -25,7 +25,6 @@ EnforceDistinctSubnets {{EnforceDistinctSubnets}}
 {{/EnforceDistinctSubnets}}
 
 DormantCanceledByStartup 1
-StrictNodes 1
 
 {{#ExitNodes}}
 ExitNodes {{Node}}

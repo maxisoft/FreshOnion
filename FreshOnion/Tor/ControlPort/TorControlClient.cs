@@ -62,7 +62,7 @@ public class TorControlClient : ITorControlClient
         using var s = await Connect(_options.Port, cancellationToken, _options.Host).ConfigureAwait(false);
         Debug.Assert(s.Connected);
 
-        using var msgBuffer = MemoryPool<byte>.Shared.Rent(2 << 10);
+        using var msgBuffer = MemoryPool<byte>.Shared.Rent(8 << 10);
         var memory = msgBuffer.Memory;
         var c = Encoding.ASCII.GetBytes("authenticate ", msgBuffer.Memory.Span);
         if (_options.Password.Length > 0)
