@@ -23,7 +23,7 @@ public class FileSearch : IFileSearch
         var assemblyDirectory = Directory.GetParent(Assembly.GetCallingAssembly().Location)?.FullName ?? string.Empty;
         if (!string.IsNullOrEmpty(assemblyDirectory))
         {
-            yield return Directory.GetCurrentDirectory();
+            yield return assemblyDirectory;
         }
         
     }
