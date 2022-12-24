@@ -11,9 +11,7 @@ CookieAuthentication 1
 CookieAuthFile {{CookieAuthFile}}{{^CookieAuthFile}}cookie-auth{{/CookieAuthFile}}
 {{/CookieAuthFile}}
 DataDirectory {{DataDirectory}}{{^DataDirectory}}data{{/DataDirectory}}
-{{#HardwareAccel}}
-HardwareAccel {{HardwareAccel}}
-{{/HardwareAccel}}
+HardwareAccel {{HardwareAccel}}{{^HardwareAccel}}1{{/HardwareAccel}}
 NoExec 1
 {{#PidFile}}
 PidFile {{PidFile}}
