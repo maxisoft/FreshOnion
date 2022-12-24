@@ -1,4 +1,5 @@
-﻿using FreshOnion.FileSystem;
+﻿using System.Text.RegularExpressions;
+using FreshOnion.FileSystem;
 using Stubble.Core.Builders;
 
 namespace FreshOnion;
@@ -25,6 +26,8 @@ public class TorConfigurationFileGenerator : ITorConfigurationFileGenerator
         var absolute = Path.GetFullPath(s);
         return s == absolute ? absolute : Path.Combine(directory, s);
     }
+
+    private static readonly Regex _lineEnding = new Regex(@"(?:\r\n)|\r", RegexOptions.Singleline | RegexOptions.Compiled);
     
     public async ValueTask<string> Generate(TorConfiguration configuration, string workingDirectory, CancellationToken cancellationToken)
     {
@@ -37,7 +40,7 @@ public class TorConfigurationFileGenerator : ITorConfigurationFileGenerator
             return ResolvePath(s, workingDirectory);
         }
         
-        return await stubble.RenderAsync(template, new
+        var res = await stubble.RenderAsync(template, new
         {
             configuration.SocksPort,
             ExitNodes = configuration.ExitNodes.Select(node => new { Node = node }),
@@ -51,5 +54,7 @@ public class TorConfigurationFileGenerator : ITorConfigurationFileGenerator
             configuration.EnforceDistinctSubnets,
             HardwareAccel = 1
         }).ConfigureAwait(false);
+
+        return _lineEnding.Replace(res, "\n");
     }
 }
