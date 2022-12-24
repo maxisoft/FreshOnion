@@ -125,7 +125,7 @@ public class TorService : ITorService
         var generatedConfig =
             await _torConfigurationFileGenerator.Generate(config, wd, cancellationToken).ConfigureAwait(false);
         await File.WriteAllTextAsync(config.TorrcFile!, generatedConfig, cancellationToken).ConfigureAwait(false);
-        _logger.LogDebug("{Config}", generatedConfig);
+        _logger.LogTrace("{Config}", generatedConfig);
         return config;
     }
 
