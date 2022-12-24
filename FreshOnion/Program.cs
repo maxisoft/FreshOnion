@@ -21,7 +21,7 @@ class Program
     {
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-        var configurationRoot = BuidConfiguration();
+        var configurationRoot = BuildConfiguration();
         var serviceProvider = BuildServiceProvider(configurationRoot);
         var logger = serviceProvider.GetService<ILoggerFactory>()!.CreateLogger<Program>();
         using var cts = new CancellationTokenSource();
@@ -213,7 +213,7 @@ class Program
         return serviceProvider;
     }
 
-    private static IConfigurationRoot BuidConfiguration()
+    private static IConfigurationRoot BuildConfiguration()
     {
         var configurationRoot = new ConfigurationBuilder()
             .AddEnvironmentVariables("FRESHONION_")
