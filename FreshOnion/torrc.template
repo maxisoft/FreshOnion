@@ -1,4 +1,4 @@
-﻿SocksPort {{SocksPort}}
+﻿SocksPort {{SocksPort}}{{^SocksPort}}9050{{/SocksPort}}
 {{#HTTPTunnelPort}}
 HTTPTunnelPort {{HTTPTunnelPort}}
 {{/HTTPTunnelPort}}

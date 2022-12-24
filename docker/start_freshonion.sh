@@ -19,8 +19,8 @@ if [ ! "$(stat -c %u "${BASEPATH}")" = "$PUID" ]; then
 	chown "$PUID:$PGID" -R "${BASEPATH}"
 fi
 
-cp --no-clobber "$APP_PATH/torrc.template" "$BASEPATH/torrc.template" || :
-cp --no-clobber "$APP_PATH/appsettings.json" "$BASEPATH/appsettings.json" || :
+cp --no-clobber "$APP_PATH/torrc.template" "$BASEPATH/torrc.template.sample" || :
+cp --no-clobber "$APP_PATH/appsettings.json" "$BASEPATH/appsettings.json.sample" || :
 rm -rf /tmp/*
 
 cd "$BASEPATH"
