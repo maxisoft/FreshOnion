@@ -1,10 +1,11 @@
 ﻿using System.Globalization;
+using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace FreshOnion.Tor.Http;
 
-public class ExitListService: IExitListService
+public class ExitListService : IExitListService
 {
     private readonly ILogger<ExitListService> _logger;
     private readonly HttpClient _httpClient;
@@ -24,26 +25,29 @@ public class ExitListService: IExitListService
         using var r = await _httpClient.GetAsync("https://metrics.torproject.org/collector/recent/exit-lists/", cancellationToken);
         var content = await r.Content.ReadAsStringAsync(cancellationToken);
         var res = new List<(string url, DateTimeOffset date)>();
+
         foreach (Match match in UrlRegex.Matches(content))
         {
             if (!match.Success) continue;
             var dateGroup = match.Groups["date"];
-            if (DateTimeOffset.TryParseExact(dateGroup.Value, "yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var date))
+            if (DateTimeOffset.TryParseExact(dateGroup.Value, "yyyy-MM-dd-HH-mm-ss",
+                    CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var date))
             {
                 date = date.ToLocalTime();
-                if (res.Any() && res[^1].date == date) continue; 
+                if (res.Any() && res[^1].date == date) continue;
                 res.Add((match.Value, date));
             }
-            
-            
         }
+
         return res;
     }
 
     public async ValueTask<List<ExitNodeInfo>> GetExitNodeInfos(Uri uri, CancellationToken cancellationToken)
     {
         using var r = await _httpClient.GetAsync(uri, cancellationToken);
-        if (!TordnselParser.TryParse(await r.Content.ReadAsStringAsync(cancellationToken), out var result))
+        var body = await r.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!TordnselParser.TryParse(body, out var result))
         {
             _logger.LogError("Unable to parse node infos from {Uri}", uri);
         }
